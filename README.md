@@ -1,5 +1,6 @@
 # 🚆 RailSetu — Advanced Admin Railway Operations & Fare Management Platform
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-2ea44f?logo=githubpages&logoColor=white)](https://chetanveerabomma-blip.github.io/railsetu/)
 [![Java](https://img.shields.io/badge/Java-21%2B%20%7C%2026-ED8B00?logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.4-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
 [![Spring Security](https://img.shields.io/badge/Spring%20Security-RBAC%20%2B%20JWT-6DB33F?logo=springsecurity&logoColor=white)](https://spring.io/projects/spring-security)
