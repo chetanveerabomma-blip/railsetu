@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RailSetu — Advanced Admin Railway Operations &amp; Fare Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- SIDEBAR NAVIGATION -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand-section">
+      <div class="brand-icon">🚆</div>
+      <div>
+        <div class="brand-title">RAILSETU <span class="brand-tag">OPS 2.0</span></div>
+        <div style="font-size: 0.65rem; color: var(--text-dim);">Centralized Railway Command</div>
+      </div>
+    </div>
+
+    <ul class="nav-menu">
+      <li class="nav-category">Core Operations</li>
+      <li><a class="nav-item active" data-view="dashboard"><span class="nav-icon">📊</span> Operations Dashboard</a></li>
+      <li><a class="nav-item" data-view="trains"><span class="nav-icon">🚆</span> Train Fleet Control</a></li>
+      <li><a class="nav-item" data-view="routes"><span class="nav-icon">🛤️</span> Route Management</a></li>
+      <li><a class="nav-item" data-view="schedules"><span class="nav-icon">🕐</span> Schedule Control</a></li>
+      <li><a class="nav-item" data-view="coaches"><span class="nav-icon">🚃</span> Coach Compositions</a></li>
+      <li><a class="nav-item" data-view="inventory"><span class="nav-icon">💺</span> Seat Inventory Engine</a></li>
+
+      <li class="nav-category">Tariff &amp; Revenue</li>
+      <li><a class="nav-item" data-view="fares"><span class="nav-icon">💰</span> Fare Control Center</a></li>
+      <li><a class="nav-item" data-view="fare-rules"><span class="nav-icon">📐</span> Fare Rules Engine</a></li>
+      <li><a class="nav-item" data-view="revenue"><span class="nav-icon">📈</span> Revenue Analytics</a></li>
+
+      <li class="nav-category">Bookings &amp; Queues</li>
+      <li><a class="nav-item" data-view="bookings"><span class="nav-icon">🎫</span> Booking Operations</a></li>
+      <li><a class="nav-item" data-view="rac-wl"><span class="nav-icon">🔄</span> RAC &amp; Waitlist Live</a></li>
+
+      <li class="nav-category">Security &amp; Field</li>
+      <li><a class="nav-item" data-view="verifier"><span class="nav-icon">📱</span> QR Ticket Verification</a></li>
+      <li><a class="nav-item" data-view="notifications"><span class="nav-icon">🔔</span> Notification Center</a></li>
+      <li><a class="nav-item" data-view="audit-logs"><span class="nav-icon">📋</span> Immutable Audit Logs</a></li>
+
+      <li class="nav-category">Customer Flow</li>
+      <li><a class="nav-item" data-view="passenger-portal" style="color: var(--accent);"><span class="nav-icon">🛒</span> Passenger Booking Portal</a></li>
+    </ul>
+
+    <!-- USER PROFILE FOOTER -->
+    <div class="user-panel">
+      <div class="user-info">
+        <div class="avatar" id="userAvatar">SA</div>
+        <div style="overflow:hidden;">
+          <div class="user-name" id="userNameDisplay">Chief Controller</div>
+          <div class="user-role-badge" id="userRoleBadge">ROLE_SUPER_ADMIN</div>
+        </div>
+      </div>
+      <button class="icon-btn btn-sm" title="Logout / Switch User" onclick="app.showLoginModal()">🔄</button>
+    </div>
+  </aside>
+
+  <!-- MAIN WRAPPER -->
+  <div class="main-wrapper">
+    <!-- TOP APP BAR -->
+    <header class="top-bar">
+      <div class="global-search-box">
+        <span class="search-icon-svg">🔍</span>
+        <input type="text" class="global-search-input" id="globalSearchInput" placeholder="Global Search: PNR, Train Number (e.g. 12635), Station...">
+      </div>
+
+      <div class="top-bar-actions">
+        <!-- Academic Dynamic Pricing Indicator -->
+        <div class="badge badge-active" id="academicBadge" style="background: rgba(255,159,28,0.12); color:#ffb703; border-color: rgba(255,159,28,0.3); font-size:0.75rem;">
+          ⚙️ Academic Dynamic Simulation: <span id="topSimStatus">ACTIVE</span>
+        </div>
+
+        <!-- Role Quick Switcher for Easy Evaluation -->
+        <select class="role-switcher-select" id="roleSwitcher" onchange="app.switchRole(this.value)">
+          <option value="superadmin">👑 SUPER_ADMIN (Full Power)</option>
+          <option value="opsadmin">🚆 OPERATIONS_ADMIN (Trains/Routes)</option>
+          <option value="fareadmin">💰 FARE_ADMIN (Tariffs/Approvals)</option>
+          <option value="bookingadmin">🎫 BOOKING_ADMIN (PNR/Cancellations)</option>
+          <option value="verifier">📱 VERIFIER (Conductor Scanner)</option>
+          <option value="passenger">👤 PASSENGER (Customer Portal)</option>
+        </select>
+
+        <button class="icon-btn" onclick="app.openNotificationsDrawer()" title="Notifications">
+          🔔
+          <span class="notification-badge" id="unreadNotifCount">3</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN PAGE CONTAINER -->
+    <main class="page-container">
+
+      <!-- ============================================================== -->
+      <!-- VIEW 1: OPERATIONS DASHBOARD -->
+      <!-- ============================================================== -->
+      <section id="view-dashboard" class="view-section active">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">📊 Central Operations Control Dashboard</h1>
+            <p class="section-desc">Real-time telemetry, fleet availability, seat utilization, and dynamic tariff monitoring</p>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-secondary" onclick="app.refreshDashboard()"><span class="nav-icon">↻</span> Refresh Metrics</button>
+            <button class="btn btn-primary" onclick="app.openTrainWizard()">+ Launch Train Wizard</button>
+          </div>
+        </div>
+
+        <!-- KPI Metrics Grid (Section 28) -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div>
+              <div class="kpi-label">Active Fleet</div>
+              <div class="kpi-value" id="kpiActiveTrains">42</div>
+              <div class="kpi-subtext" id="kpiTotalTrains">Total: 45 Scheduled</div>
+            </div>
+            <div class="kpi-icon-wrap" style="color:var(--primary);">🚆</div>
+          </div>
+
+          <div class="kpi-card success">
+            <div>
+              <div class="kpi-label">Today's Bookings</div>
+              <div class="kpi-value" id="kpiTodayBookings">1,284</div>
+              <div class="kpi-subtext" id="kpiTotalBookings">Gross Bookings: 4,821</div>
+            </div>
+            <div class="kpi-icon-wrap" style="color:var(--success);">🎫</div>
+          </div>
+
+          <div class="kpi-card">
+            <div>
+              <div class="kpi-label">Confirmed / RAC / WL</div>
+              <div class="kpi-value" id="kpiPassengerBreakdown">1,012 / 126</div>
+              <div class="kpi-subtext" id="kpiWlCount">Waitlist: 146 Pax</div>
+            </div>
+            <div class="kpi-icon-wrap" style="color:var(--info);">👥</div>
+          </div>
+
+          <div class="kpi-card accent">
+            <div>
+              <div class="kpi-label">Fleet Occupancy</div>
+              <div class="kpi-value" id="kpiOccupancy">78.4%</div>
+              <div class="kpi-subtext">Optimal Operating Range</div>
+            </div>
+            <div class="kpi-icon-wrap" style="color:var(--accent);">📈</div>
+          </div>
+
+          <div class="kpi-card success">
+            <div>
+              <div class="kpi-label">Today's Gross Revenue</div>
+              <div class="kpi-value" id="kpiTodayRevenue">₹42,100</div>
+              <div class="kpi-subtext" id="kpiTotalRevenue">Total: ₹1,84,500</div>
+            </div>
+            <div class="kpi-icon-wrap" style="color:#10b981;">💰</div>
+          </div>
+
+          <div class="kpi-card danger">
+            <div>
+              <div class="kpi-label">Processed Refunds</div>
+              <div class="kpi-value" id="kpiTotalRefunds">₹14,200</div>
+              <div class="kpi-subtext">Cancellation Charges Retained</div>
+            </div>
+            <div class="kpi-icon-wrap" style="color:var(--danger);">↩️</div>
+          </div>
+        </div>
+
+        <!-- Charts Grid (Section 28) -->
+        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px; margin-bottom: 24px;">
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">📈 Revenue &amp; Booking Volume Trend</h2>
+              <span class="badge badge-active">Live Telemetry</span>
+            </div>
+            <div style="height: 280px;">
+              <canvas id="revenueTrendChart"></canvas>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">💺 Class-Wise Revenue Distribution</h2>
+            </div>
+            <div style="height: 280px;">
+              <canvas id="classDistributionChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Trains Occupancy Table -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">🚆 Live Train Fleet Performance &amp; Occupancy Status</h2>
+            <button class="btn btn-secondary btn-sm" onclick="app.showView('trains')">Manage All Trains →</button>
+          </div>
+          <div class="data-table-container">
+            <table class="data-table" id="dashboardFleetTable">
+              <thead>
+                <tr>
+                  <th>Train No</th>
+                  <th>Train Name</th>
+                  <th>Source → Destination</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Total Seats</th>
+                  <th>Occupancy</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="dashboardFleetBody">
+                <!-- Injected via app.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- VIEW 2: TRAIN FLEET MANAGEMENT -->
+      <!-- ============================================================== -->
+      <section id="view-trains" class="view-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">🚆 Train Fleet Control Center</h1>
+            <p class="section-desc">Central operational management for train compositions, schedules, and safe lifecycle controls</p>
+          </div>
+          <button class="btn btn-primary" onclick="app.openTrainWizard()">+ Launch 8-Step Train Wizard</button>
+        </div>
+
+        <!-- Advanced Filters (Section 3) -->
+        <div class="panel" style="padding:16px 20px; margin-bottom:18px;">
+          <div class="filter-bar">
+            <input type="text" class="input-control" id="trainSearchFilter" placeholder="Search Train No or Name..." oninput="app.loadTrains()">
+            <select class="select-control" id="trainStatusFilter" onchange="app.loadTrains()">
+              <option value="">All Statuses</option>
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="INACTIVE">INACTIVE</option>
+              <option value="SUSPENDED">SUSPENDED</option>
+              <option value="CANCELLED">CANCELLED</option>
+              <option value="UNDER_MAINTENANCE">UNDER_MAINTENANCE</option>
+              <option value="SEASONAL">SEASONAL</option>
+            </select>
+            <select class="select-control" id="trainTypeFilter" onchange="app.loadTrains()">
+              <option value="">All Train Types</option>
+              <option value="SUPERFAST">SUPERFAST</option>
+              <option value="VANDE_BHARAT">VANDE_BHARAT</option>
+              <option value="EXPRESS">EXPRESS</option>
+              <option value="RAJDHANI">RAJDHANI</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" onclick="app.loadTrains()">Apply Filters</button>
+          </div>
+        </div>
+
+        <!-- Train Fleet Table -->
+        <div class="panel">
+          <div class="data-table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Train Number</th>
+                  <th>Train Name</th>
+                  <th>Type</th>
+                  <th>Source → Dest</th>
+                  <th>Status</th>
+                  <th>Coaches</th>
+                  <th>Seats</th>
+                  <th>Occupancy</th>
+                  <th>Fare Ver</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="trainFleetTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+          <div id="trainsPagination" style="margin-top:14px; display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; color:var(--text-dim);">
+            <span id="trainsPaginationInfo">Showing 1-10 of 42 trains</span>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-secondary btn-sm" id="btnTrainPrev" onclick="app.prevTrainPage()">Previous</button>
+              <button class="btn btn-secondary btn-sm" id="btnTrainNext" onclick="app.nextTrainPage()">Next</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- VIEW 3: ROUTE MANAGEMENT -->
+      <!-- ============================================================== -->
+      <section id="view-routes" class="view-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">🛤️ Interactive Route Management</h1>
+            <p class="section-desc">Chronological station alignment, halt times, distance validation, and route versioning</p>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <select class="select-control" id="routeTrainSelector" onchange="app.loadRouteForSelectedTrain()">
+              <!-- Populated with trains -->
+            </select>
+            <button class="btn btn-primary" onclick="app.saveRouteModifications()">Save &amp; Version Route</button>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+          <!-- Visual Route Timeline -->
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">📍 Sequential Route Path</h2>
+              <span class="badge badge-active" id="routeValidationBadge">✓ Strictly Validated</span>
+            </div>
+            <div class="route-timeline" id="routeTimelineContainer">
+              <!-- Route stops nodes injected here -->
+            </div>
+          </div>
+
+          <!-- Route Stops Editor -->
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">⚙️ Station &amp; Halt Configuration</h2>
+              <button class="btn btn-secondary btn-sm" onclick="app.addRouteStationRow()">+ Add Intermediate Station</button>
+            </div>
+            <div class="data-table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Seq</th>
+                    <th>Station</th>
+                    <th>Arrival</th>
+                    <th>Departure</th>
+                    <th>Halt</th>
+                    <th>Distance</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="routeEditorTableBody">
+                  <!-- Editable rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- VIEW 4: SCHEDULE MANAGEMENT -->
+      <!-- ============================================================== -->
+      <section id="view-schedules" class="view-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">🕐 Train Schedule &amp; Calendar Control</h1>
+            <p class="section-desc">Effective dates, running days bitmask, seasonal and holiday schedule versioning</p>
+          </div>
+          <select class="select-control" id="scheduleTrainSelector" onchange="app.loadSchedulesForSelectedTrain()">
+            <!-- Populated with trains -->
+          </select>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Active Timetables for Train <span id="currentScheduleTrainNo">12635</span></h2>
+          </div>
+          <div class="data-table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Schedule ID</th>
+                  <th>Departure</th>
+                  <th>Arrival</th>
+                  <th>Running Days</th>
+                  <th>Schedule Type</th>
+                  <th>Effective From</th>
+                  <th>Effective Until</th>
+                  <th>Status</th>
+                  <th>Version</th>
+                </tr>
+              </thead>
+              <tbody id="schedulesTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- VIEW 5: COACH COMPOSITIONS -->
+      <!-- ============================================================== -->
+      <section id="view-coaches" class="view-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">🚃 Coach Compositions &amp; Rake Formation</h1>
+            <p class="section-desc">Manage rake composition (e.g. L1, L2, A1, B1, S1..), maintenance states, and physical capacity</p>
+          </div>
+          <select class="select-control" id="coachTrainSelector" onchange="app.loadCoachesForSelectedTrain()">
+            <!-- Populated with trains -->
+          </select>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Rake Configuration for Selected Train</h2>
+          </div>
+          <div class="data-table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Seq</th>
+                  <th>Coach Code</th>
+                  <th>Travel Class</th>
+                  <th>Seat Count</th>
+                  <th>Operational Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="coachCompositionTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- VIEW 6: SEAT INVENTORY ENGINE -->
+      <!-- ============================================================== -->
+      <section id="view-inventory" class="view-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">💺 Real Seat Inventory Engine &amp; Visualizer</h1>
+            <p class="section-desc">Physical berth layout, temporary 10-minute hold status, maintenance blocks, and RAC allocations</p>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <select class="select-control" id="invTrainSelector" onchange="app.loadSeatInventory()">
+              <!-- Injected -->
+            </select>
+            <input type="date" class="input-control" id="invDateSelector" onchange="app.loadSeatInventory()">
+            <select class="select-control" id="invClassSelector" onchange="app.loadSeatInventory()">
+              <option value="ALL">All Classes</option>
+              <option value="3A">3A (AC 3 Tier)</option>
+              <option value="2A">2A (AC 2 Tier)</option>
+              <option value="SL">SL (Sleeper)</option>
+              <option value="CC">CC (Chair Car)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Legend -->
+        <div style="display:flex; gap:18px; margin-bottom:14px; font-size:0.82rem;">
+          <span style="display:flex; align-items:center; gap:6px;"><span style="width:12px; height:12px; background:#10b981; border-radius:2px;"></span> AVAILABLE</span>
+          <span style="display:flex; align-items:center; gap:6px;"><span style="width:12px; height:12px; background:#f59e0b; border-radius:2px;"></span> HELD (10-Min Timer)</span>
+          <span style="display:flex; align-items:center; gap:6px;"><span style="width:12px; height:12px; background:#ef4444; border-radius:2px;"></span> BOOKED</span>
+          <span style="display:flex; align-items:center; gap:6px;"><span style="width:12px; height:12px; background:#64748b; border-radius:2px;"></span> MAINTENANCE / BLOCKED</span>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Physical Coach Berth Grid</h2>
+            <button class="btn btn-secondary btn-sm" onclick="app.simulateSeatHold()">⚡ Test 10-Minute Lock</button>
+          </div>
+          <div id="seatInventoryContainer" class="coach-visualizer">
+            <div class="berth-grid" id="berthGridContainer">
+              <!-- Berth boxes generated -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- VIEW 7: FARE CONTROL CENTER -->
+      <!-- ============================================================== -->
+      <section id="view-fares" class="view-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">💰 Fare Control Center &amp; Matrix</h1>
+            <p class="section-desc">Authoritative tariff engine, versioned pricing, future scheduled changes, and approval workflows</p>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-secondary" onclick="app.openDynamicPricingModal()">⚡ Dynamic Pricing Simulation</button>
+            <button class="btn btn-primary" onclick="app.openProposeFareModal()">+ Propose Fare Change</button>
+          </div>
+        </div>
+
+        <!-- Academic Simulation Banner (Section 17) -->
+        <div class="academic-banner">
+          <div>
+            <strong>Academic Dynamic Pricing Simulation:</strong> Pricing engine optionally adjusts surcharges (+12% to +25%) based on occupancy tiers (&gt;50%, &gt;80%).
+          </div>
+          <div>
+            <label style="cursor:pointer; display:flex; align-items:center; gap:8px;">
+              <span>Simulation Status:</span>
+              <input type="checkbox" id="simToggleCheckbox" checked onchange="app.toggleAcademicSimulation(this.checked)">
+              <strong id="simStatusLabel">ENABLED</strong>
+            </label>
+          </div>
+        </div>
+
+        <!-- Pending Approvals for SUPER_ADMIN -->
+        <div class="panel" id="pendingApprovalsPanel" style="display:none; border-color: rgba(245, 158, 11, 0.4);">
+          <div class="panel-header">
+            <h2 class="panel-title" style="color:var(--warning);">⏳ Sensitive Fare Changes Pending Super Admin Approval</h2>
+          </div>
+          <div class="data-table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Req ID</th>
+                  <th>Train</th>
+                  <th>Class</th>
+                  <th>Current</th>
+                  <th>Proposed</th>
+                  <th>Diff</th>
+                  <th>Impact (Pax)</th>
+                  <th>Revenue Impact</th>
+                  <th>Proposed By</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="pendingApprovalsTableBody">
+                <!-- Dynamically injected -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Active Fare Matrix Table (Section 13) -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Dynamic Database-Driven Fare Matrix</h2>
+          </div>
+          <div class="data-table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Train</th>
+                  <th>Route</th>
+                  <th>Class</th>
+                  <th>Base</th>
+                  <th>Reservation</th>
+                  <th>Service</th>
+                  <th>Total</th>
+                  <th>Effective Date</th>
+                  <th>Version</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="fareMatrixTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- VIEW 8: FARE RULES ENGINE -->
+      <!-- ============================================================== -->
+      <section id="view-fare-rules" class="view-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">📐 Configurable Fare Rules Engine</h1>
+            <p class="section-desc">Traceable business rules: distance base rate, class multipliers, superfast and concession factors</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="data-table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Rule Code</th>
+                  <th>Rule Name</th>
+                  <th>Applies To Train</th>
+                  <th>Applies To Class</th>
+                  <th>Distance Range</th>
+                  <th>Base Rate / Km</th>
+                  <th>Reservation</th>
+                  <th>Superfast Fee</th>
+                  <th>Dynamic Multiplier</th>
+                  <th>Priority</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="fareRulesTableBody">
+                <!-- Injected via app.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- VIEW 9: REVENUE MANAGEMENT -->
+      <!-- ============================================================== -->
+      <section id="view-revenue" class="view-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">📈 Revenue Control Center &amp; Train Profitability</h1>
+            <p class="section-desc">Academic financial breakdown by corridor, class distribution, and refund reconciliation</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Train Profitability &amp; Operational Metrics</h2>
+          </div>
+          <div class="data-table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Train Number</th>
+                  <th>Train Name</th>
+                  <th>Total Bookings</th>
+                  <th>Gross Booking Value</th>
+                  <th>Estimated Refund Value</th>
+                  <th>Net Revenue Contribution</th>
+                </tr>
+              </thead>
+              <tbody id="revenueByTrainTableBody">
+                <!-- Injected via app.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- VIEW 10: BOOKING OPERATIONS & CANCELLATIONS -->
+      <!-- ============================================================== -->
+      <section id="view-bookings" class="view-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">🎫 Booking Management &amp; Cancellation Engine</h1>
+            <p class="section-desc">Search by PNR, inspect passenger allocations, and process transactional cancellations with RAC/WL promotions</p>
+          </div>
+        </div>
+
+        <div class="panel" style="padding:16px 20px; margin-bottom:18px;">
+          <div class="filter-bar">
+            <input type="text" class="input-control" id="bookingSearchFilter" placeholder="Search PNR (e.g. 10 digits), Passenger, Email..." oninput="app.loadBookings()">
+            <select class="select-control" id="bookingStatusFilter" onchange="app.loadBookings()">
+              <option value="">All Statuses</option>
+              <option value="CONFIRMED">CONFIRMED</option>
+              <option value="RAC">RAC</option>
+              <option value="WAITING">WAITING</option>
+              <option value="CANCELLED">CANCELLED</option>
+              <option value="REFUNDED">REFUNDED</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" onclick="app.loadBookings()">Search Bookings</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="data-table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>PNR</th>
+                  <th>Train</th>
+                  <th>Route</th>
+                  <th>Journey Date</th>
+                  <th>Class</th>
+                  <th>Pax</th>
+                  <th>Total Fare</th>
+                  <th>Fare Ver</th>
+                  <th>Status</th>
+                  <th>Booked By</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="bookingsTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- VIEW 11: RAC & WAITLIST LIVE QUEUE -->
+      <!-- ============================================================== -->
+      <section id="view-rac-wl" class="view-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">🔄 RAC &amp; Waitlist Live FIFO Queues</h1>
+            <p class="section-desc">Real-time priority queues: cancellations automatically promote RAC to Confirmed and WL to RAC</p>
+          </div>
+          <select class="select-control" id="racWlTrainSelector" onchange="app.loadRacWlQueues()">
+            <!-- Populated -->
+          </select>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+          <!-- RAC Queue -->
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title" style="color:var(--warning);">RAC Live Queue (Next for Confirmed Berth)</h2>
+            </div>
+            <div class="data-table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Priority</th>
+                    <th>RAC Position</th>
+                    <th>Passenger</th>
+                    <th>PNR</th>
+                    <th>Class</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="racQueueTableBody">
+                  <!-- Injected -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Waiting List Queue -->
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title" style="color:var(--info);">Waiting List Live Queue (Next for RAC)</h2>
+            </div>
+            <div class="data-table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Priority</th>
+                    <th>WL Position</th>
+                    <th>Passenger</th>
+                    <th>PNR</th>
+                    <th>Class</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="wlQueueTableBody">
+                  <!-- Injected -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- VIEW 12: QR TICKET VERIFICATION (CONDUCTOR TERMINAL) -->
+      <!-- ============================================================== -->
+      <section id="view-verifier" class="view-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">📱 Conductor Handheld QR &amp; PNR Verification Terminal</h1>
+            <p class="section-desc">On-board digital pass verification, anti-fraud scanning, and audit logging</p>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px;">
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">Verify Travel Pass / QR Token</h2>
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="font-size:0.85rem; color:var(--text-muted); display:block; margin-bottom:6px;">Scan QR Token or Enter 10-Digit PNR:</label>
+              <input type="text" class="input-control" id="verifyQueryInput" placeholder="e.g. PNR number or cryptographic token..." style="width:100%; font-size:1rem; padding:12px;">
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="font-size:0.85rem; color:var(--text-muted); display:block; margin-bottom:6px;">Station Code:</label>
+              <input type="text" class="input-control" id="verifyStationInput" value="MAS" style="width:100%;">
+            </div>
+            <button class="btn btn-primary" style="width:100%; padding:12px;" onclick="app.executeVerification()">🔍 Verify Authenticity</button>
+
+            <!-- Result Box -->
+            <div id="verificationResultBox" style="margin-top:20px; display:none;">
+              <!-- Injected -->
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">Recent Conductor Scan Logs</h2>
+            </div>
+            <div class="data-table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>PNR</th>
+                    <th>Station</th>
+                    <th>Result</th>
+                    <th>Conductor</th>
+                  </tr>
+                </thead>
+                <tbody id="scanHistoryTableBody">
+                  <!-- Populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- VIEW 13: NOTIFICATIONS CENTER -->
+      <!-- ============================================================== -->
+      <section id="view-notifications" class="view-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">🔔 Admin Operations Notification Center</h1>
+            <p class="section-desc">Automated alerts for high occupancy, low inventory, fare expiry, and passenger impacts</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="app.markAllNotificationsRead()">Mark All Read</button>
+        </div>
+
+        <div class="panel">
+          <div id="notificationsListContainer" style="display:flex; flex-direction:column; gap:12px;">
+            <!-- Injected -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- VIEW 14: IMMUTABLE AUDIT LOGS -->
+      <!-- ============================================================== -->
+      <section id="view-audit-logs" class="view-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">📋 Immutable Administrative Activity Logs</h1>
+            <p class="section-desc">Cryptographically traceable audit trail of all operational modifications, approvals, and actions</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="data-table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Admin ID</th>
+                  <th>Action</th>
+                  <th>Entity</th>
+                  <th>Entity ID</th>
+                  <th>Previous State</th>
+                  <th>New State</th>
+                  <th>Reason</th>
+                </tr>
+              </thead>
+              <tbody id="auditLogsTableBody">
+                <!-- Injected via app.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- VIEW 15: PASSENGER BOOKING PORTAL (CUSTOMER FLOW) -->
+      <!-- ============================================================== -->
+      <section id="view-passenger-portal" class="view-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title" style="color:var(--accent);">🛒 RailSetu Passenger Portal — Live Booking Flow</h1>
+            <p class="section-desc">Search trains, dynamically calculate fare from database, lock seats with 10-minute timer, and get QR pass</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="app.showView('dashboard')">← Back to Admin Console</button>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px;">
+          <!-- Booking Form -->
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">1. Search &amp; Calculate Fare</h2>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+              <div>
+                <label style="font-size:0.8rem; color:var(--text-muted);">From Station</label>
+                <select class="select-control" id="custSourceStation" style="width:100%;" onchange="app.onPassengerSearchChange()"></select>
+              </div>
+              <div>
+                <label style="font-size:0.8rem; color:var(--text-muted);">To Station</label>
+                <select class="select-control" id="custDestStation" style="width:100%;" onchange="app.onPassengerSearchChange()"></select>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+              <div>
+                <label style="font-size:0.8rem; color:var(--text-muted);">Select Train</label>
+                <select class="select-control" id="custTrainSelect" style="width:100%;" onchange="app.onPassengerSearchChange()"></select>
+              </div>
+              <div>
+                <label style="font-size:0.8rem; color:var(--text-muted);">Journey Date</label>
+                <input type="date" class="input-control" id="custJourneyDate" style="width:100%;" onchange="app.onPassengerSearchChange()">
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px;">
+              <div>
+                <label style="font-size:0.8rem; color:var(--text-muted);">Travel Class</label>
+                <select class="select-control" id="custClassSelect" style="width:100%;" onchange="app.onPassengerSearchChange()">
+                  <option value="3A">3A (AC 3 Tier)</option>
+                  <option value="2A">2A (AC 2 Tier)</option>
+                  <option value="SL">SL (Sleeper)</option>
+                  <option value="CC">CC (Chair Car)</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:0.8rem; color:var(--text-muted);">Passenger Count</label>
+                <input type="number" class="input-control" id="custPaxCount" value="1" min="1" max="6" style="width:100%;" onchange="app.onPassengerSearchChange()">
+              </div>
+            </div>
+
+            <!-- Authoritative Backend Fare Calculation Card (Section 22) -->
+            <div id="custFareBreakdownCard" style="background:var(--bg-primary); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:16px; margin-bottom:18px;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span style="color:var(--text-muted); font-size:0.85rem;">Authoritative Base Fare:</span>
+                <span style="font-family:var(--font-mono); font-weight:700;" id="custBaseFareDisplay">₹650.00</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span style="color:var(--text-muted); font-size:0.85rem;">Reservation &amp; Service Charges:</span>
+                <span style="font-family:var(--font-mono); font-weight:700;" id="custChargesDisplay">₹70.00</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span style="color:var(--text-muted); font-size:0.85rem;">Dynamic Component:</span>
+                <span style="font-family:var(--font-mono); font-weight:700; color:var(--accent);" id="custDynamicDisplay">₹0.00</span>
+              </div>
+              <div style="border-top:1px solid var(--border-color); padding-top:10px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:1.05rem; font-weight:700;">Total Authoritative Fare:</span>
+                <span style="font-size:1.4rem; font-weight:800; color:var(--primary); font-family:var(--font-mono);" id="custTotalFareDisplay">₹720.00</span>
+              </div>
+              <div style="font-size:0.72rem; color:var(--text-dim); margin-top:6px;" id="custFareVersionDisplay">Calculated via Fare Engine v1</div>
+            </div>
+
+            <!-- Passenger Details -->
+            <div style="margin-bottom:16px;">
+              <h3 style="font-size:0.95rem; margin-bottom:10px; color:var(--text-main);">Passenger 1 Info</h3>
+              <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap:8px;">
+                <input type="text" class="input-control" id="custPaxName" placeholder="Full Name" value="Balaji Viswanathan">
+                <input type="number" class="input-control" id="custPaxAge" placeholder="Age" value="28">
+                <select class="select-control" id="custPaxBerth">
+                  <option value="LOWER">Lower</option>
+                  <option value="MIDDLE">Middle</option>
+                  <option value="UPPER">Upper</option>
+                  <option value="SIDE_LOWER">Side Lower</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:12px;">
+              <button class="btn btn-warning" style="flex:1;" onclick="app.holdSeatAndStartTimer()">⏱️ Lock Seat (10-Min Timer)</button>
+              <button class="btn btn-success" style="flex:1;" onclick="app.executePassengerBooking()">💳 Confirm &amp; Book Ticket</button>
+            </div>
+
+            <!-- 10-Minute Timer Badge -->
+            <div id="seatHoldTimerBox" style="display:none; margin-top:14px; background:rgba(245, 158, 11, 0.15); border:1px solid rgba(245, 158, 11, 0.4); padding:10px 14px; border-radius:var(--radius-md); text-align:center;">
+              <span style="color:var(--warning); font-weight:700;">Seat Locked! Payment Timer: <span id="holdTimerCountdown" style="font-family:var(--font-mono); font-size:1.1rem;">10:00</span></span>
+            </div>
+          </div>
+
+          <!-- Digital Travel Pass Preview -->
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">2. Digital Travel Pass &amp; QR Code</h2>
+            </div>
+
+            <div id="digitalPassDisplayContainer">
+              <div style="text-align:center; padding:40px 20px; color:var(--text-dim);">
+                <div style="font-size:3rem; margin-bottom:12px;">🎫</div>
+                <p>Complete a booking on the left to instantly issue an authenticated Digital Travel Pass with verifiable QR code.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: 8-STEP TRAIN CREATION WIZARD (Section 4) -->
+<!-- ============================================================== -->
+<div class="modal-overlay" id="trainWizardModal">
+  <div class="modal-box" style="max-width:850px;">
+    <div class="modal-header">
+      <h2 class="modal-title">🚆 Multi-Step Train Creation Wizard</h2>
+      <button class="icon-btn" onclick="app.closeModal('trainWizardModal')">✕</button>
+    </div>
+
+    <!-- Wizard Steps Header -->
+    <div style="padding: 20px 24px 0;">
+      <div class="wizard-steps">
+        <div class="wizard-step-item active" id="stepIndicator1"><div class="wizard-step-num">1</div><div class="wizard-step-title">Basic Info</div></div>
+        <div class="wizard-step-item" id="stepIndicator2"><div class="wizard-step-num">2</div><div class="wizard-step-title">Route</div></div>
+        <div class="wizard-step-item" id="stepIndicator3"><div class="wizard-step-num">3</div><div class="wizard-step-title">Schedule</div></div>
+        <div class="wizard-step-item" id="stepIndicator4"><div class="wizard-step-num">4</div><div class="wizard-step-title">Coaches</div></div>
+        <div class="wizard-step-item" id="stepIndicator5"><div class="wizard-step-num">5</div><div class="wizard-step-title">Seats</div></div>
+        <div class="wizard-step-item" id="stepIndicator6"><div class="wizard-step-num">6</div><div class="wizard-step-title">Fares</div></div>
+        <div class="wizard-step-item" id="stepIndicator7"><div class="wizard-step-num">7</div><div class="wizard-step-title">Review</div></div>
+        <div class="wizard-step-item" id="stepIndicator8"><div class="wizard-step-num">8</div><div class="wizard-step-title">Publish</div></div>
+      </div>
+    </div>
+
+    <div class="modal-body" id="wizardBodyContainer">
+      <!-- Step 1 to 8 dynamic content injected via app.js -->
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btnWizardPrev" onclick="app.wizardPrevStep()" style="display:none;">Back</button>
+      <button class="btn btn-primary" id="btnWizardNext" onclick="app.wizardNextStep()">Next Step →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: TRAIN REMOVAL DEPENDENCY CHECK & SUSPENSION (Section 6 & 7) -->
+<!-- ============================================================== -->
+<div class="modal-overlay" id="trainRemovalModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 class="modal-title" style="color:var(--danger);">⚠️ Train Removal Impact &amp; Dependency Check</h2>
+      <button class="icon-btn" onclick="app.closeModal('trainRemovalModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:rgba(239, 68, 68, 0.12); border:1px solid rgba(239, 68, 68, 0.4); border-radius:var(--radius-md); padding:16px; margin-bottom:18px;">
+        <h4 style="color:#ef4444; margin-bottom:6px;">POLICY ALERT: Permanent Deletion Prohibited</h4>
+        <p style="font-size:0.85rem; color:var(--text-muted);" id="removalPolicyWarning"></p>
+      </div>
+
+      <h3 style="font-size:1rem; margin-bottom:12px; color:var(--text-main);">TRAIN REMOVAL IMPACT</h3>
+      <div style="background:var(--bg-primary); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:16px; margin-bottom:18px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+          <span>Future bookings:</span><strong id="impactFutureBookings">148</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+          <span>Confirmed passengers:</span><strong id="impactConfirmedPax">112</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+          <span>RAC passengers:</span><strong id="impactRacPax">21</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+          <span>Waiting-list passengers:</span><strong id="impactWlPax">15</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>Pending refunds:</span><strong id="impactRefunds">4</strong>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="font-size:0.85rem; color:var(--text-muted); display:block; margin-bottom:6px;">Suspension Reason (Logged to Audit Trail):</label>
+        <textarea class="input-control" id="suspendReasonInput" style="width:100%; height:70px;" placeholder="e.g. Track renewal on Villupuram-Trichy section"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="app.closeModal('trainRemovalModal')">Cancel</button>
+      <button class="btn btn-danger" onclick="app.executeTrainSuspension()">🚫 Execute Safe Train Suspension (100% Refund)</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: FARE IMPACT ANALYSIS & PROPOSAL (Section 18 & 19) -->
+<!-- ============================================================== -->
+<div class="modal-overlay" id="proposeFareModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 class="modal-title">💰 Propose Fare Tariff Revision</h2>
+      <button class="icon-btn" onclick="app.closeModal('proposeFareModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="margin-bottom:14px;">
+        <label style="font-size:0.85rem; color:var(--text-muted); display:block; margin-bottom:6px;">Select Active Fare to Revise:</label>
+        <select class="select-control" id="proposeFareSelect" style="width:100%;" onchange="app.onProposeFareSelectChange()"></select>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-bottom:16px;">
+        <div>
+          <label style="font-size:0.85rem; color:var(--text-muted);">Current Fare (₹):</label>
+          <input type="text" class="input-control" id="proposeCurrentFare" readonly style="width:100%; opacity:0.8;">
+        </div>
+        <div>
+          <label style="font-size:0.85rem; color:var(--text-muted);">Proposed Total Fare (₹):</label>
+          <input type="number" class="input-control" id="proposeNewFare" style="width:100%;" oninput="app.updateFareImpactPreview()">
+        </div>
+      </div>
+
+      <!-- Preview Impact Card (Section 18) -->
+      <div style="background:var(--bg-primary); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:16px; margin-bottom:16px;">
+        <h4 style="font-size:0.88rem; color:var(--primary); margin-bottom:10px;">FARE IMPACT ANALYSIS PREVIEW</h4>
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.85rem;">
+          <span>Difference:</span><strong id="impactDiffPreview">+₹60</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.85rem;">
+          <span>Affected future bookings:</span><strong id="impactBookingsPreview">84</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.85rem;">
+          <span>Existing confirmed tickets:</span><span style="color:#10b981; font-weight:700;">NOT CHANGED (Retained)</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+          <span>Projected revenue impact:</span><strong id="impactRevenuePreview">+₹5,040</strong>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-size:0.85rem; color:var(--text-muted); display:block; margin-bottom:6px;">Justification / Reason:</label>
+        <input type="text" class="input-control" id="proposeFareReason" placeholder="e.g. Annual route inflation adjustment" style="width:100%;">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="app.closeModal('proposeFareModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="app.submitProposedFare()">Submit for Super Admin Approval</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- MODAL: TRAIN VERSION HISTORY (Section 5) -->
+<!-- ============================================================== -->
+<div class="modal-overlay" id="trainVersionModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 class="modal-title">📜 Train Configuration Version History</h2>
+      <button class="icon-btn" onclick="app.closeModal('trainVersionModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="data-table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Ver</th>
+              <th>Created By</th>
+              <th>Date</th>
+              <th>Change Reason</th>
+              <th>Snapshot</th>
+            </tr>
+          </thead>
+          <tbody id="trainVersionTableBody">
+            <!-- Injected -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="app.closeModal('trainVersionModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
